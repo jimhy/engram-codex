@@ -15,6 +15,15 @@ codex plugin add engram@engram-codex
 
 开 `codex`,首次提示时信任 engram 的 hook。卸载:`codex plugin remove engram@engram-codex`。
 
+## 更新
+
+```bash
+codex plugin marketplace upgrade engram-codex   # 从 GitHub 拉最新
+codex plugin add engram@engram-codex            # 从刷新后的快照重装
+```
+
+`marketplace upgrade` 刷新 git 快照,然后 `plugin add` 从中重装——**即使版本号没变也会刷新已装内容**(不用先 `remove`)。
+
 ## 你会得到什么
 
 | codex 机制 | 作用 |

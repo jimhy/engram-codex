@@ -15,6 +15,15 @@ codex plugin add engram@engram-codex
 
 Open `codex`; approve the engram hooks when prompted. Uninstall: `codex plugin remove engram@engram-codex`.
 
+## Update
+
+```bash
+codex plugin marketplace upgrade engram-codex   # pull the latest from GitHub
+codex plugin add engram@engram-codex            # reinstall from the refreshed snapshot
+```
+
+`marketplace upgrade` refreshes the git snapshot, then `plugin add` reinstalls from it — this refreshes the cached content **even when the version number is unchanged** (no need to `remove` first).
+
 ## What you get
 
 | codex mechanism | what it does |
