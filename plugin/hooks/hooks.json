@@ -1,0 +1,31 @@
+{
+  "_note": "engram codex plugin hooks. Auto-loaded by codex from the plugin root. Paths resolve via the PLUGIN_ROOT env var codex injects into hook commands: posix via bash ${PLUGIN_ROOT}, Windows via powershell $env:PLUGIN_ROOT. The scripts also fall back to $env:CLAUDE_PLUGIN_ROOT and to their own location for local dev.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${PLUGIN_ROOT}/scripts/codex-session-start.sh\"",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path $env:PLUGIN_ROOT 'scripts\\codex-session-start.ps1')\"",
+            "statusMessage": "engram: load memory hot-index",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${PLUGIN_ROOT}/scripts/codex-stop-review.sh\"",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path $env:PLUGIN_ROOT 'scripts\\codex-stop-review.ps1')\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
