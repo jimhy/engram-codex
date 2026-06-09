@@ -1,47 +1,71 @@
 # engram-codex
 
-[Engram](https://github.com/jimhy/engram) 仿人脑分层长期记忆系统的 **Codex 适配器**。让 [Codex](https://developers.openai.com/codex) 用上 engram:**会话开始注入记忆热索引、会话结束自动复盘巩固**,并提供一个 engram skill 让 agent 在该检索时**主动回溯记忆**。单 Rust 引擎二进制、零外部依赖。
+> [Engram](https://github.com/jimhy/engram) — brain-inspired long-term memory — for **Codex**. Injects relevant memory at session start, consolidates at session end, and recalls on demand via a skill. One Rust binary, zero deps, **memory store shared with the Claude Code version**.
 
-## 安装
+**English** | [中文](./README.zh-CN.md)
+
+---
+
+## Install
 
 ```bash
 codex plugin marketplace add jimhy/engram-codex
 codex plugin add engram@engram-codex
 ```
 
-开 `codex`,首次会提示信任 engram 的 hook,同意即可。卸载:`codex plugin remove engram@engram-codex`。
+Open `codex`; approve the engram hooks when prompted. Uninstall: `codex plugin remove engram@engram-codex`.
 
-## 干什么
+## What you get
 
-| 对接点 | codex 机制 |
+| codex mechanism | what it does |
 |---|---|
-| 会话开始**注入热索引** | `SessionStart` hook → `engram hot-index` → 注入 `additionalContext` |
-| 会话结束**复盘巩固** | `Stop` hook → `review-prepare` 算增量 → `codex exec` 无头复盘落库 |
-| **主动检索**(agent) | `skills/engram/SKILL.md`:recall-first,被问"以前处理过 X 吗 / 还剩什么待办"先查记忆 |
+| `SessionStart` hook | Injects the **hot index** (relevant memory) into context via `engram hot-index` → `additionalContext`; also **catches up** any consolidation a previous session didn't finish |
+| `Stop` hook | Spins up a headless `codex exec` reviewer that consolidates only the **increment since the last watermark** (writes new memories, promotes/demotes, supersedes, merges) |
+| engram **skill** | recall-first: when asked "have we handled X / what's the project / what's left to do", the agent recalls from memory before scanning the code |
 
-记忆库与 Claude Code 版 engram **共用**(`~/.engram/general.redb` + 各项目 `<proj>/.engram/engram.redb`),两边记忆互通。
+The memory store is **shared with the Claude Code version** (`~/.engram/general.redb` + per-project `<project>/.engram/engram.redb`), so memories written from Codex and Claude Code are common to both.
 
-## 结构
+## How it works
+
+Same engine as [engram](https://github.com/jimhy/engram) — tiered, ACT-R-style activation, self-forgetting (forgetting = demotion, not deletion). See the main project for the full model.
+
+| Tier | Role |
+|---|---|
+| **L1** | "subconscious" — core identity / global preferences (almost never forgotten) |
+| **L2** | important, cross-project |
+| **L3** | ordinary general notes |
+| **L4** | per-project, in `<project>/.engram/engram.redb`, located via the `.engram/` anchor |
+
+## Structure
 
 ```
-.agents/plugins/marketplace.json   codex marketplace 清单(source: ./plugin)
+.agents/plugins/marketplace.json   codex marketplace manifest (source: ./plugin)
 plugin/                            the codex plugin
   .codex-plugin/plugin.json        manifest
-  hooks/hooks.json                 SessionStart/Stop,${PLUGIN_ROOT} 自定位
+  hooks/hooks.json                 SessionStart/Stop, ${PLUGIN_ROOT}-relative
   scripts/                         codex-{session-start,stop-review,launch-reviewer}.{ps1,sh}
                                    + reviewer-prompt.md
-  skills/engram/SKILL.md           engram agent 接口 + 判定 rubric
-  bin/                             四平台引擎二进制
+  skills/engram/SKILL.md           engram agent interface + judgment rubric
+  bin/                             four-platform engine binaries
 ```
 
-## 跨平台
+## Platforms
 
-- **Windows**:`.ps1`(已实测)
-- **macOS / Linux**:`.sh`(`hooks.json` 用 `command`/`commandWindows` 分流)
+- **Windows**: `.ps1` (tested)
+- **macOS / Linux**: `.sh` (`hooks.json` routes via `command` / `commandWindows`)
 
-## 与 Claude 适配器的关系
+## Differences from the Claude Code adapter
 
-本仓库是 **Codex 专用**适配器,与 [engram 主项目](https://github.com/jimhy/engram)(Claude Code 插件)一比一对称、共用同一套引擎与记忆库。详细设计见 [`plugin/README.md`](plugin/README.md)。
+- **`Stop` instead of `SessionEnd`**: codex has no `SessionEnd`; `Stop` fires every turn, so a review only runs when the increment ≥ `ENGRAM_REVIEW_MIN_LINES` (default 40) — otherwise the pending marker is left for the next `SessionStart` catch-up.
+- **`Stop` stdout must be valid JSON**: the hook always returns `{}`.
+- **Reviewer via `codex exec`** (not `claude -p`), with `ENGRAM_REVIEWER=1` guarding against recursion.
+- Injection / review hooks fire only in the **interactive `codex` TUI** — `codex exec` (non-interactive) does not trigger lifecycle hooks.
+
+## Configuration
+
+- `ENGRAM_REVIEW_MIN_LINES` — transcript-line increment needed to trigger a review (default `40`).
+- `ENGRAM_REVIEWER_CODEX` — the codex executable the reviewer launches (default `codex`).
+- `ENGRAM_REVIEWER_MODEL` — model override for the headless reviewer.
 
 ## License
 
