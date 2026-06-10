@@ -21,6 +21,11 @@ jget() { printf '%s' "$plan" | sed -n "s/.*\"$1\":\"\\([^\"]*\\)\".*/\\1/p"; }
 slice="$(jget slice)"; general="$(jget general_db)"; project="$(jget project_db)"
 pname="$(jget project_name)"; pending="$(jget pending)"
 
+# scope kind: a management-directory db has a 'workspace' marker next to it
+# (<dir>/.engram/workspace) -> the reviewer gets workspace consolidation rules.
+kind="project"
+[ -f "$(dirname "$project")/workspace" ] && kind="workspace"
+
 [ -f "$prompt_tpl" ] || exit 0
 prompt="$(cat "$prompt_tpl")"
 prompt="${prompt//"{{TRANSCRIPT}}"/$slice}"
@@ -28,6 +33,7 @@ prompt="${prompt//"{{ENGRAM}}"/$engram}"
 prompt="${prompt//"{{GENERAL_DB}}"/$general}"
 prompt="${prompt//"{{PROJECT_DB}}"/$project}"
 prompt="${prompt//"{{PROJECT_NAME}}"/$pname}"
+prompt="${prompt//"{{KIND}}"/$kind}"
 prompt="${prompt//"{{PENDING}}"/$pending}"
 prompt="${prompt//"{{WATERMARK}}"/$wm}"
 prompt="${prompt//"{{SKILL}}"/$skill}"

@@ -27,6 +27,14 @@ $model = $env:ENGRAM_REVIEWER_MODEL
 # forward-slash helper for paths embedded in the prompt.
 $fs = { param($p) if ($p) { $p -replace '\\', '/' } else { $p } }
 
+# scope kind: a management-directory db has a 'workspace' marker next to it
+# (<dir>/.engram/workspace) -> the reviewer gets workspace consolidation rules.
+$kind = 'project'
+try {
+    $marker = Join-Path (Split-Path -Parent $ProjectDb) 'workspace'
+    if (Test-Path -LiteralPath $marker) { $kind = 'workspace' }
+} catch {}
+
 $tpl = Get-Content -Raw -Encoding UTF8 -LiteralPath $promptTpl
 $prompt = $tpl
 $prompt = $prompt.Replace('{{TRANSCRIPT}}',   (& $fs $Slice))
@@ -34,6 +42,7 @@ $prompt = $prompt.Replace('{{ENGRAM}}',       (& $fs $Engram))
 $prompt = $prompt.Replace('{{GENERAL_DB}}',   (& $fs $GeneralDb))
 $prompt = $prompt.Replace('{{PROJECT_DB}}',   (& $fs $ProjectDb))
 $prompt = $prompt.Replace('{{PROJECT_NAME}}', $ProjectName)
+$prompt = $prompt.Replace('{{KIND}}',         $kind)
 $prompt = $prompt.Replace('{{PENDING}}',      (& $fs $Pending))
 $prompt = $prompt.Replace('{{WATERMARK}}',    (& $fs $Watermark))
 $prompt = $prompt.Replace('{{SKILL}}',        (& $fs $skill))
@@ -61,7 +70,7 @@ if ($env:ENGRAM_HOOK_DRYRUN -eq '1') {
     Write-Host "[dry-run] cwd          = $Cwd"
     Write-Host "[dry-run] slice        = $Slice"
     Write-Host "[dry-run] general      = $GeneralDb"
-    Write-Host "[dry-run] project      = $ProjectDb ($ProjectName)"
+    Write-Host "[dry-run] project      = $ProjectDb ($ProjectName, kind=$kind)"
     Write-Host "[dry-run] pending      = $Pending"
     Write-Host "[dry-run] watermark    = $Watermark"
     Write-Host "[dry-run] prompt $($prompt.Length) chars"
