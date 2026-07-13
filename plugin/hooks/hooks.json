@@ -1,5 +1,5 @@
 {
-  "_note": "engram codex plugin hooks. Auto-loaded by codex from the plugin root. Paths resolve via the PLUGIN_ROOT env var codex injects into hook commands: posix via bash ${PLUGIN_ROOT}, Windows via powershell $env:PLUGIN_ROOT. The scripts also fall back to $env:CLAUDE_PLUGIN_ROOT and to their own location for local dev.",
+  "description": "engram codex plugin hooks. Injects the memory hot-index on SessionStart and consolidates on Stop. Scripts resolve the plugin root from the PLUGIN_ROOT env var codex injects into hook commands (posix via bash ${PLUGIN_ROOT}, Windows via powershell $env:PLUGIN_ROOT); they also fall back to $env:CLAUDE_PLUGIN_ROOT and to their own location for local dev.",
   "hooks": {
     "SessionStart": [
       {
