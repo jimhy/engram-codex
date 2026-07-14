@@ -71,7 +71,7 @@ A memory is only worth keeping if it **can't be cheaply recovered** from the cod
 **Per-project — L4, in that project's store (`<project>/.engram/engram.redb`):**
 - **L4.1** — project hard rules: the inviolable conventions / taboos for *this* repo, learned from your "always / never" directives or hard-won corrections. *Not* a copy of AGENTS.md / lint configs (those are auto-loaded artifacts); L4.1 holds what they **don't** say.
 - **L4.2** — durable project knowledge: what the project is, its **architecture / module mental-map** (what each part does and why it's split that way — distilled, not an `ls` dump), and settled / debated decisions (what was chosen, what was rejected and why — so a later session won't re-propose a dead option).
-- **L4.3** — transient: open loops / hand-off-able work (current progress, what's blocked, next step). Decays fast; superseded once done.
+- **L4.3** — fast-decay tier: low-importance, short-lived memories (current progress, short-lived open loops, hand-off-able work land here naturally). Tiers are not bound to content types — an important long-lived open loop goes to a higher tier by its importance; verified done / stale entries get deleted.
 
 > Golden rule: **store the distilled mental model, never what a single `grep` / `ls` already gives you.** File locations live in the pointer, not the cue.
 
@@ -115,4 +115,4 @@ plugin/                            the codex plugin
 
 ## License
 
-MIT
+Apache License 2.0 — see [LICENSE](./LICENSE).

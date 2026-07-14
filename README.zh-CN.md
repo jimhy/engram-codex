@@ -40,7 +40,7 @@ codex plugin add engram@engram-codex            # 从刷新后的快照重装
 |---|---|
 | `SessionStart` hook | 经 `engram hot-index` → `additionalContext` 把**热索引**(相关记忆)注入上下文;并**补跑**上次会话未完成的巩固 |
 | `Stop` hook | 起一个**独立**的无头 `codex exec` 复盘者,只巩固**自上次水位线以来的增量**(写入新记忆、升降级、标记取代、合并) |
-| engram **skill** | recall-first:被问"以前处理过 X 吗 / 这项目是什么 / 还剩什么待办"时,agent 先查记忆再翻代码 |
+| engram **skill** | recall-first:被问"以前处理过 X 吗 / 这项目是什么 / 还剩什么没做完"时,agent 先查记忆再翻代码 |
 
 记忆库与 **Claude Code 版共用**(`~/.engram/general.redb` + 各项目 `<项目>/.engram/engram.redb`),两边记忆互通。
 
@@ -71,7 +71,7 @@ codex plugin add engram@engram-codex            # 从刷新后的快照重装
 **项目级 —— L4，存该项目的库（`<项目>/.engram/engram.redb`）：**
 - **L4.1**——项目铁律：**本仓库**不可违反的约定 / 禁忌，来自你的"永远 / 绝不"指令或踩坑确立。**不是**照抄 AGENTS.md / lint 配置（那些是会被自动加载的 artifact）；L4.1 只存它们**没写**的隐性铁律。
 - **L4.2**——持久项目知识：这项目是干嘛的、**架构 / 模块心智地图**（各部分干嘛、为什么这么分——提炼版，不是 `ls` 罗列）、已定型 / 已辩论的决策（选了什么、否了什么及原因——免得后续会话重提死方案）。
-- **L4.3**——临时：未完成的开口 / 可交接的活（当前进度、卡在哪、下一步）。衰减快，做完即被取代。
+- **L4.3**——快衰减层：重要度低、时效短的记忆（当前进度、短命开口、可交接的活自然落这里）。层级不绑定内容类型——重要的长期开口按重要度落更高层；做完 / 失效核实后即删。
 
 > 黄金法则：**只存提炼的心智模型，绝不存单条 `grep` / `ls` 就能拿到的东西。** 文件位置放在指针里，不放进 cue。
 
@@ -115,4 +115,4 @@ plugin/                            the codex plugin
 
 ## 许可证
 
-MIT
+Apache License 2.0 —— 见 [LICENSE](./LICENSE)。

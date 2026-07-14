@@ -51,6 +51,28 @@ Each line is a JSON object {timestamp, type, payload}:
 - type == \"event_msg\" / \"session_meta\" / \"turn_context\" are UI/meta noise; ignore them.
 - The injected memory hot-index appears as a developer message."
 
+# ---- 代理派生（堵 403）：headless 复盘子进程若缺 HTTPS_PROXY 会走直连，被上游以
+# 「403 Request not allowed」按地区限制拒绝。启动前确保 HTTPS_PROXY/HTTP_PROXY 有值，
+# 优先级：① ENGRAM_REVIEWER_PROXY 显式指定；② 已有 HTTPS_PROXY/https_proxy → 继承不动；
+# ③ ALL_PROXY/all_proxy → 据以设两者；④ 都没有 → 不设（直连，可能失败）。无注册表分支（POSIX）。
+# 值可能是 host:port（无 scheme），统一补 http://。export 后由下方 nohup 子进程继承。
+engram_norm_proxy() {
+  case "$1" in
+    *://*) printf '%s' "$1" ;;
+    *)     printf 'http://%s' "$1" ;;
+  esac
+}
+if [ -n "${ENGRAM_REVIEWER_PROXY:-}" ]; then
+  _p="$(engram_norm_proxy "$ENGRAM_REVIEWER_PROXY")"
+  export HTTPS_PROXY="$_p" HTTP_PROXY="$_p"
+elif [ -n "${HTTPS_PROXY:-}" ] || [ -n "${https_proxy:-}" ]; then
+  :  # 继承环境里已有的代理
+elif [ -n "${ALL_PROXY:-}" ] || [ -n "${all_proxy:-}" ]; then
+  _src="${ALL_PROXY:-$all_proxy}"
+  _p="$(engram_norm_proxy "$_src")"
+  export HTTPS_PROXY="$_p" HTTP_PROXY="$_p"
+fi
+
 # Launch FULLY DETACHED so the hook returns instantly (critical for Stop: it must print its {} and
 # return without waiting for the multi-second reviewer). ENGRAM_REVIEWER=1 is inherited so the
 # reviewer's own hooks bail out (no recursion). Bypass sandbox so the reviewer can write the redb

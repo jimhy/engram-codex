@@ -63,8 +63,51 @@ Each line is a JSON object {timestamp, type, payload}:
 '@
 $prompt = $prompt + $codexNote
 
+# ---- Proxy derivation: a headless reviewer subprocess with no HTTPS_PROXY may go direct and get
+# rejected with a region-limited "403 Request not allowed". Before launch, ensure HTTPS_PROXY/HTTP_PROXY
+# has a value. Priority: (1) ENGRAM_REVIEWER_PROXY if set; (2) existing HTTPS_PROXY/https_proxy -> keep
+# (inherit); (3) ALL_PROXY/all_proxy -> set both; (4) Windows-only: system proxy registry (ProxyEnable=1
+# and non-empty ProxyServer) -> set both; (5) none -> leave unset (direct, may fail). ProxyServer can be
+# host:port with no scheme, so http:// is prepended. The result is inherited by the launched process via
+# Start-Process ShellExecute (parent env is passed through).
+function Get-NormalizedProxy {
+    param([string]$Value)
+    $v = $Value.Trim()
+    if ($v -notmatch '^[a-zA-Z][a-zA-Z0-9+.-]*://') { $v = 'http://' + $v }
+    return $v
+}
+function Set-ReviewerProxy {
+    if ($env:ENGRAM_REVIEWER_PROXY) {
+        $p = Get-NormalizedProxy $env:ENGRAM_REVIEWER_PROXY
+        $env:HTTPS_PROXY = $p; $env:HTTP_PROXY = $p
+        return
+    }
+    if ($env:HTTPS_PROXY -or $env:https_proxy) { return }  # inherit existing proxy
+    $allp = if ($env:ALL_PROXY) { $env:ALL_PROXY } elseif ($env:all_proxy) { $env:all_proxy } else { '' }
+    if ($allp) {
+        $p = Get-NormalizedProxy $allp
+        $env:HTTPS_PROXY = $p; $env:HTTP_PROXY = $p
+        return
+    }
+    try {
+        $reg = Get-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -ErrorAction Stop
+        if ($reg.ProxyEnable -eq 1 -and $reg.ProxyServer) {
+            $ps = [string]$reg.ProxyServer
+            # ProxyServer may be "host:port" (all protocols) or "http=h:p;https=h:p;..." (per-protocol); prefer https.
+            if ($ps -match 'https=([^;]+)') { $ps = $matches[1] }
+            elseif ($ps -match 'http=([^;]+)') { $ps = $matches[1] }
+            if ($ps.Trim()) {
+                $p = Get-NormalizedProxy $ps
+                $env:HTTPS_PROXY = $p; $env:HTTP_PROXY = $p
+            }
+        }
+    } catch {}
+}
+Set-ReviewerProxy
+
 if ($env:ENGRAM_HOOK_DRYRUN -eq '1') {
     Write-Host "[dry-run] reviewer-cli = codex exec"
+    Write-Host "[dry-run] proxy        = $($env:HTTPS_PROXY)"
     Write-Host "[dry-run] codex        = $codex"
     Write-Host "[dry-run] model        = $model"
     Write-Host "[dry-run] cwd          = $Cwd"
